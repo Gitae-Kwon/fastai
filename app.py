@@ -72,11 +72,26 @@ if choice3 == "키다리스튜디오":
     file3_path = DATA_DIR / "kidari_contents.xlsx"
 else:
     file3_path = DATA_DIR / "lezhin_contents.xlsx"
+    
+# ── 저장 파일명 기본값을 2번째 파일명 + '매핑'으로 설정 ──────────────
+from pathlib import Path
+
+if f2 is not None:
+    # f2.name: 예) "platform_report.xlsx" → stem: "platform_report"
+    default_name = Path(f2.name).stem + "매핑"
+else:
+    default_name = "mapping_result"
+
+# 확장자는 입력 없이, 내부에서 붙여 줍니다
+save_name = st.text_input(
+    "💾 저장 파일명(확장자 제외)", 
+    value=default_name
+) + ".xlsx"
 
 # st.caption(f"→ `{file3_path.name}` 파일을 사용합니다.")
 
 # 저장 파일명 입력
-save_name = st.text_input("💾 저장 파일명(확장자 제외)", value="mapping_result") + ".xlsx"
+## save_name = st.text_input("💾 저장 파일명(확장자 제외)", value="mapping_result") + ".xlsx"
 
 if st.button("🟢 매핑 실행"):
     # 입력 확인
