@@ -56,13 +56,13 @@ f2 = st.file_uploader("② 플랫폼별 정산서 (판매채널에서 제공한 
 
 # ③ 추가: A/B 선택
 choice3 = st.selectbox(
-    "③ 매핑할 콘텐츠 전체 파일을 선택하세요",
-    ("3-A", "3-B"),
+    "③ 콘텐츠마스터 매핑 법인을 선택해주세요",
+    ("키다리스튜디오", "레진KR"),
     help="data 폴더에 kidari_contents.xlsx / lezhin_contents.xlsx 를 준비해 주세요."
 )
 
 # 선택에 따라 실제 파일 경로 결정
-if choice3 == "3-A":
+if choice3 == "키다리스튜디오":
     file3_path = DATA_DIR / "kidari_contents.xlsx"
 else:
     file3_path = DATA_DIR / "lezhin_contents.xlsx"
