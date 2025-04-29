@@ -80,7 +80,7 @@ else:
 from pathlib import Path
 
 if f2 is not None:
-    default_name = Path(f2.name).stem + "매핑"
+    default_name = Path(f2.name).stem + "_매핑"
 else:
     default_name = "mapping_result"
 
