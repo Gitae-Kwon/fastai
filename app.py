@@ -49,55 +49,54 @@ def clean_title(txt: str) -> str:
 # ── UI ────────────────────────────────────────────────────────────────
 st.title("📁 판매채널 및 콘텐츠마스터ID 매핑")
 
+# ① S2-판매채널 콘텐츠리스트 업로드
 f1 = st.file_uploader(
-    "① S2-판매채널 콘텐츠리스트 "
-    "( https://kiss.kld.kr/mst/sch/schn-ctns-search )에서 채널 검색 후 다운로드  \n"
-    "※ S2에서 다운로드한 파일은 먼저 ‘열기’ 후 ‘다른 이름으로 저장’하여 업로드해 주세요.",
+    "① S2-판매채널 콘텐츠리스트  "
+    "(https://kiss.kld.kr/mst/sch/schn-ctns-search)에서 채널 검색 후 다운로드\n"
+    "※ S2에서 다운로드한 파일은 ‘열기’ → ‘다른 이름으로 저장’ 후 업로드해 주세요.",
     type="xlsx",
 )
+
+# ② 플랫폼별 정산서 업로드
 f2 = st.file_uploader(
     "② 플랫폼별 정산서 (판매채널에서 제공한 정산서)",
-    type="xlsx"
+    type="xlsx",
 )
 
-# ③ 추가: A/B 선택
+# ③ A/B 법인 선택 (고정된 data 폴더 내 파일 사용)
 choice3 = st.selectbox(
     "③ 콘텐츠마스터 매핑 법인을 선택해주세요",
     ("키다리스튜디오", "레진KR"),
-    help="data 폴더에 kidari_contents.xlsx / lezhin_contents.xlsx を 준비해 주세요."
+    help="data 폴더에 kidari_contents.xlsx / lezhin_contents.xlsx 파일을 준비해 주세요."
 )
 
-# 선택에 따라 실제 파일 경로 결정
+# 선택에 따라 사용할 3번 파일 경로 결정
 if choice3 == "키다리스튜디오":
     file3_path = DATA_DIR / "kidari_contents.xlsx"
 else:
     file3_path = DATA_DIR / "lezhin_contents.xlsx"
-    
-# ── 저장 파일명 기본값을 2번째 파일명 + '매핑'으로 설정 ──────────────
+
+# ④ 저장 파일명 기본값: 업로드한 f2 파일명(stem) + '매핑'
 from pathlib import Path
 
 if f2 is not None:
-    # f2.name: 예) "platform_report.xlsx" → stem: "platform_report"
     default_name = Path(f2.name).stem + "매핑"
 else:
     default_name = "mapping_result"
 
-# 확장자는 입력 없이, 내부에서 붙여 줍니다
+# 사용자가 저장 파일명을 변경할 수 있고, 내부에서 .xlsx를 붙입니다
 save_name = st.text_input(
-    "💾 저장 파일명(확장자 제외)", 
+    "💾 저장 파일명(확장자 제외)",
     value=default_name
 ) + ".xlsx"
 
-# st.caption(f"→ `{file3_path.name}` 파일을 사용합니다.")
-
-# 저장 파일명 입력
-## save_name = st.text_input("💾 저장 파일명(확장자 제외)", value="mapping_result") + ".xlsx"
-
+# ── 매핑 실행 버튼 ─────────────────────────────────────────────────────
 if st.button("🟢 매핑 실행"):
-    # 입력 확인
+    # 업로드 확인
     if not (f1 and f2):
-        st.error("file1, file2 를 모두 업로드해 주세요.")
+        st.error("file1, file2를 모두 업로드해 주세요.")
         st.stop()
+    # 3번 파일 확인
     if not file3_path.exists():
         st.error(f"선택된 3번 파일이 `{file3_path}` 에 없습니다.")
         st.stop()
@@ -105,7 +104,7 @@ if st.button("🟢 매핑 실행"):
     # 1) Excel → DataFrame
     df1 = pd.read_excel(f1)
     df2 = pd.concat(pd.read_excel(f2, sheet_name=None).values(), ignore_index=True)
-    df3 = pd.read_excel(file3_path)    # ← 여기서 A/B 파일 중 하나를 읽습니다.
+    df3 = pd.read_excel(file3_path)  # A/B 중 사용자가 선택한 파일 읽기
 
     # 3) 컬럼 선택 -----------------------------------------------------
     c1  = pick(FILE1_COL_CAND, df1)
