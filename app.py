@@ -76,7 +76,7 @@ if choice3 == "키다리스튜디오":
 elif choice3 == "레진KR":
     file3_path = DATA_DIR / "lezhin_contents.xlsx"
 else:  # 레진 JP
-    file3_path = DATA_DIR / "lezhinjp_contents.xlsx".xlsx"
+    file3_path = DATA_DIR / "lezhinjp_contents.xlsx"
 
 # ④ 저장 파일명 기본값: 업로드한 f2 파일명(stem) + '매핑'
 from pathlib import Path
