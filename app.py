@@ -52,7 +52,7 @@ st.title("📁 판매채널 및 콘텐츠마스터ID 매핑")
 # ① S2-판매채널 콘텐츠리스트 업로드
 f1 = st.file_uploader(
     "① S2-판매채널 콘텐츠리스트  "
-    "(https://kiss.kld.kr/mst/sch/schn-ctns-search)에서 채널 검색 후 다운로드\n"
+    "( https://kiss.kld.kr/mst/sch/schn-ctns-search )에서 채널 검색 후 다운로드  \n"
     "※ S2에서 다운로드한 파일은 ‘열기’ → ‘다른 이름으로 저장’ 후 업로드해 주세요.",
     type="xlsx",
 )
@@ -66,15 +66,17 @@ f2 = st.file_uploader(
 # ③ A/B 법인 선택 (고정된 data 폴더 내 파일 사용)
 choice3 = st.selectbox(
     "③ 콘텐츠마스터 매핑 법인을 선택해주세요",
-    ("키다리스튜디오", "레진KR"),
-    help="data 폴더에 kidari_contents.xlsx / lezhin_contents.xlsx 파일을 준비해 주세요."
+    ("키다리스튜디오", "레진KR", "레진JP"),
+    help="data 폴더에 kidari_contents.xlsx / lezhin_contents.xlsx / lezhinJP_contents.xlsx 파일을 준비해 주세요."
 )
 
 # 선택에 따라 사용할 3번 파일 경로 결정
 if choice3 == "키다리스튜디오":
     file3_path = DATA_DIR / "kidari_contents.xlsx"
-else:
+elif choice3 == "레진KR":
     file3_path = DATA_DIR / "lezhin_contents.xlsx"
+else:  # 레진 JP
+    file3_path = DATA_DIR / "lezhinjp_contents.xlsx".xlsx"
 
 # ④ 저장 파일명 기본값: 업로드한 f2 파일명(stem) + '매핑'
 from pathlib import Path
