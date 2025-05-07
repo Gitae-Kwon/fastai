@@ -112,6 +112,10 @@ if st.button("🟢 매핑 실행"):
     df2 = pd.concat(pd.read_excel(f2, sheet_name=None).values(), ignore_index=True)
     df3 = pd.read_excel(file3_path)
 
+    # ★ 정제 전에 원본 상품명 컬럼 저장
+    c2 = pick(FILE2_COL_CAND, df2)
+    df2["원본_상품명"] = df2[c2]
+
     # 2) 컬럼 선택
     c1 = pick(FILE1_COL_CAND, df1)
     c2 = pick(FILE2_COL_CAND, df2)
@@ -123,13 +127,21 @@ if st.button("🟢 매핑 실행"):
     df2["정제_상품명"] = df2[c2].apply(clean_title)
     df3["정제_콘텐츠3명"] = df3[c3].apply(clean_title)
 
-    # 4) 1차 매핑
-    map1 = df1.drop_duplicates("정제_콘텐츠명").set_index("정제_콘텐츠명")["판매채널콘텐츠ID"]
-    df2["매핑결과"] = df2["정제_상품명"].map(map1).fillna(df2["정제_상품명"])
+    ## 5) 1차 매핑
+    map1 = df1.drop_duplicates("정제_콘텐츠명")\
+              .set_index("정제_콘텐츠명")["판매채널콘텐츠ID"]
+    df2["매핑결과"] = df2["정제_상품명"].map(map1)\
+                          .fillna(df2["원본_상품명"])   # ← 여기
 
     # 5) 2차 매핑
     map3 = df3.drop_duplicates("정제_콘텐츠3명").set_index("정제_콘텐츠3명")[id3]
     df2["최종_매핑결과"] = df2["정제_상품명"].map(map3).fillna(df2["매핑결과"])
+
+    # 6) 2차 매핑
+    map3 = df3.drop_duplicates("정제_콘텐츠3명")\
+              .set_index("정제_콘텐츠3명")[id3]
+    df2["최종_매핑결과"] = df2["정제_상품명"].map(map3)\
+                              .fillna(df2["매핑결과"])     # ← 여긴 그대로 두셔도, 앞에서 원본을 이미 채워줌
 
     # 6) 매핑콘텐츠명 / 콘텐츠ID
     mask = df2["정제_상품명"] == df2["매핑결과"]
