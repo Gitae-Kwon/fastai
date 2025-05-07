@@ -184,6 +184,13 @@ if st.button("🟢 매핑 실행"):
         "최종_매핑결과": "매핑_콘텐츠마스터ID",
     }, inplace=True)
 
+    # ── 채널_콘텐츠명(vlookup) 열 삽입 ─────────────────────────────────
+    # 1) 정제_상품명 ⇄ 정산서_콘텐츠명 매핑 dict 생성
+    lookup = dict(zip(result["정제_상품명"], result["정산서_콘텐츠명"]))
+    # 2) 매핑_콘텐츠마스터명 열 위치 찾기
+    pos2 = result.columns.get_loc("매핑_콘텐츠마스터명")
+    # 3) 그 위치 앞에 “채널_콘텐츠명” 열 삽입
+    result.insert(pos2, "채널_콘텐츠명", result["정제_상품명"].map(lookup))
 
     # 12) 엑셀 저장 + 서식 + 숨김
     buf = io.BytesIO()
