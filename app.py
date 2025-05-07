@@ -34,6 +34,10 @@ def clean_title(txt) -> str:
     if re.fullmatch(r"\d{1,2}월\d{1,2}일", t):
         return t
 
+        # "24/7" 같은 슬래시 포함 숫자 패턴은 그대로
+    if re.fullmatch(r"\d+/\d+", t):
+        return t
+
     # 3) 나머지 정제 로직
     t = re.sub(r"\s*제\s*\d+[권화]", "", t)
     for k, v in {"Un-holyNight": "UnholyNight", "?": "", "~": "", ",": "", "-": "", "_": ""}.items():
@@ -180,13 +184,7 @@ if st.button("🟢 매핑 실행"):
         "최종_매핑결과": "매핑_콘텐츠마스터ID",
     }, inplace=True)
 
-    # ── 여기서 두 줄을 추가 ─────────────────────────────────────────
-    # ① "매핑_콘텐츠마스터ID" 컬럼의 위치(index)를 정수로 구하고
-    pos = result.columns.get_loc("매핑_콘텐츠마스터ID")
-    # ② "정산서_콘텐츠명" 을 복사해 "채널_콘텐츠명" 이라는 이름으로 매핑_콘텐츠마스터ID 앞에 삽입
-    result.insert(pos, "채널_콘텐츠명", result["정산서_콘텐츠명"])
-    # ────────────────────────────────────────────────────────────────
-    
+
     # 12) 엑셀 저장 + 서식 + 숨김
     buf = io.BytesIO()
     visible = {
