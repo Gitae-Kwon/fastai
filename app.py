@@ -195,7 +195,7 @@ if st.button("🟢 매핑 실행"):
     # 매칭되는 값이 없으면 빈 문자열로 처리
     values = result["매핑_콘텐츠마스터명"].map(lookup).fillna("")
 
-    result.insert(pos, "채널_콘텐츠명", values)
+    result.insert(pos, "판매채널_콘텐츠명", values)
 
     # 12) 엑셀 저장 + 서식 + 숨김
     buf = io.BytesIO()
