@@ -187,16 +187,15 @@ if st.button("🟢 매핑 실행"):
         "최종_매핑결과": "매핑_콘텐츠마스터ID",
     }, inplace=True)
 
-    # ── 판매채널_콘텐츠명(vlookup) 열 삽입 ─────────────────────────────────
+    # ── 채널_콘텐츠명(vlookup) 열 삽입 ─────────────────────────────────
     lookup = dict(zip(result["정제_상품명"], result["정산서_콘텐츠명"]))
-    # ★ 판매채널_콘텐츠명 열 추가 (매핑명 바로 앞에)
     pos = result.columns.get_loc("매핑_콘텐츠마스터명")
 
-    # 매핑_콘텐츠마스터명 이 빈 문자열이 아닌 경우에만 정산서_콘텐츠명 복사
-    mask    = result["매핑_콘텐츠마스터명"] != ""
-    channel = result["정산서_콘텐츠명"].where(mask, "")
+    # 매핑_콘텐츠마스터명 값을 키로 lookup dict 에서 찾아오되,
+    # 매칭되는 값이 없으면 빈 문자열로 처리
+    values = result["매핑_콘텐츠마스터명"].map(lookup).fillna("")
 
-    result.insert(pos, "판매채널_콘텐츠명", channel)
+    result.insert(pos, "채널_콘텐츠명", values)
 
     # 12) 엑셀 저장 + 서식 + 숨김
     buf = io.BytesIO()
