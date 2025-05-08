@@ -24,9 +24,6 @@ def pick(cands, df):
             return c
     raise ValueError(f"가능한 컬럼이 없습니다 ➜ {cands}")
 
-def clean_title(txt) -> str:
-
-
     # 3) 나머지 정제 로직
     t = re.sub(r"\s*제\s*\d+[권화]", "", t)
     for k, v in {"Un-holyNight": "UnholyNight", "?": "", "~": "", ",": "", "-": "", "_": ""}.items():
