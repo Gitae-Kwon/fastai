@@ -31,9 +31,16 @@ def clean_title(txt) -> str:
 
     t = str(txt).strip()
 
+    # 2) 이미 "7월24일" 처럼 월일 패턴이면 그대로
+    if re.fullmatch(r"\d{1,2}월\d{1,2}일", t):
+        return t
+
     # 3) 나머지 정제 로직
     t = re.sub(r"\s*제\s*\d+[권화]", "", t)
-    for k, v in {"Un-holyNight": "UnholyNight", "?": "", "~": "", ",": "", "-": "", "_": ""}.items():
+    for k, v in {
+        "Un-holyNight": "UnholyNight", "?": "", "~": "",
+        ",": "", "-": "", "_": ""
+    }.items():
         t = t.replace(k, v)
     t = re.sub(r"\([^)]*\)|\[[^\]]*\]", "", t)
     t = re.sub(r"\d+[권화부회]", "", t)
