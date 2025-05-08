@@ -200,7 +200,7 @@ if st.button("🟢 매핑 실행"):
     visible = {
         "S2_콘텐츠명","S2_정제콘텐츠명","S2_판매채널콘텐츠ID",
         "정제_상품명","매핑_판매채널콘텐츠ID","매핑_콘텐츠마스터ID",
-        "매핑_콘텐츠마스터명","미매핑_콘텐츠마스터명","정산서_콘텐츠명","채널_콘탠츠명"
+        "매핑_콘텐츠마스터명","미매핑_콘텐츠마스터명","정산서_콘텐츠명","채널_콘텐츠명"
     }
     with pd.ExcelWriter(buf, engine="xlsxwriter") as writer:
         result.to_excel(writer, sheet_name="매핑결과", index=False)
