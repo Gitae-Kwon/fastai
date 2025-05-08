@@ -208,9 +208,9 @@ if st.button("🟢 매핑 실행"):
         # 열 너비 자동 조정
         for col_idx, col_name in enumerate(result.columns):
         # result.iloc[0, col_idx] 가 1행(첫 번째 데이터) 셀 값
-        first_val = str(result.iloc[0, col_idx])
-        width = len(first_val) + 1    # +1 은 여유폭
-        ws.set_column(col_idx, col_idx, width)
+            first_val = str(result.iloc[0, col_idx])
+            width = len(first_val) + 1    # +1 은 여유폭
+            ws.set_column(col_idx, col_idx, width)
         # 헤더 색상
         fy = wb.add_format({"bg_color":"#FFFFCC","bold":True,"border":1})
         fg = wb.add_format({"bg_color":"#99FFCC","bold":True,"border":1})
