@@ -38,7 +38,7 @@ def clean_title(txt) -> str:
 
     # 2.5) "[e북]24/7 1권" 같이 문자열 어딘가에 "숫자/숫자" 패턴이 있으면
     #      그 패턴만 꺼내서 반환
-    slash_match = re.search(r"\d+/\d+", t)
+    slash_match = re.search(r"\24/\7", t)
     if slash_match:
         return slash_match.group()
 
