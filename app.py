@@ -36,24 +36,22 @@ def clean_title(txt) -> str:
     if re.fullmatch(r"\d{1,2}월\d{1,2}일", t):
         return t
 
-    # 이하 기존 정제 로직...
-    t = re.sub(r"\s*제\s*\d+[권화]", "", t)
-    # … 나머지 정제 코드 …
-    return t.replace(" ", "").strip()
+    # 2.5) "[e북]24/7 1권" 같이 문자열 어딘가에 "숫자/숫자" 패턴이 있으면
+    #      그 패턴만 꺼내서 반환
+    slash_match = re.search(r"\d+/\d+", t)
+    if slash_match:
+        return slash_match.group()
 
-def clean_title(txt: str) -> str:
-    t = str(txt)
+    # 3) 나머지 정제 로직
     t = re.sub(r"\s*제\s*\d+[권화]", "", t)
-    for k, v in {
-        "Un-holyNight": "UnholyNight", "?": "", "~": "", ",": "", "-": "", "_": ""
-    }.items():
+    for k, v in {"Un-holyNight": "UnholyNight", "?": "", "~": "", ",": "", "-": "", "_": ""}.items():
         t = t.replace(k, v)
     t = re.sub(r"\([^)]*\)|\[[^\]]*\]", "", t)
     t = re.sub(r"\d+[권화부회]", "", t)
     for kw in [
-        "개정판 l","개정판","외전","무삭제본","무삭제판","합본",
-        "단행본","시즌","세트","연재","특별","최종화","완결",
-        "2부","무삭제","완전판","세개정판","19세개정판"
+        "개정판 l", "개정판", "외전", "무삭제본", "무삭제판", "합본",
+        "단행본", "시즌", "세트", "연재", "특별", "최종화", "완결",
+        "2부", "무삭제", "완전판", "세개정판", "19세개정판"
     ]:
         t = t.replace(kw, "")
     t = re.sub(r"\d+", "", t).rstrip(".")
