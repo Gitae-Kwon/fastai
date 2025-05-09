@@ -18,12 +18,6 @@ FILE3_COL_CAND = ["콘텐츠명", "콘텐츠 제목", "Title", "ContentName", "�
 FILE3_ID_CAND = ["판매채널콘텐츠ID", "콘텐츠ID", "ID", "ContentID"]
 
 # ── 유틸 ──────────────────────────────────────────────────────────────
-def pick(cands, df):
-    for c in cands:
-        if c in df.columns:
-            return c
-    raise ValueError(f"가능한 컬럼이 없습니다 ➜ {cands}")
-
 def clean_title(txt) -> str:
     # 1) 진짜 날짜(datetime/date) 객체면 f"{월}월{일}일" 로
     if isinstance(txt, (datetime, date)):
@@ -35,12 +29,18 @@ def clean_title(txt) -> str:
     if re.fullmatch(r"\d{1,2}월\d{1,2}일", t):
         return t
 
+    # 2.5) 맨 끝에 "숫자/숫자" 패턴이 있으면 통째로 제거
+    t = re.sub(r'\s*\d+/\d+$', '', t)
+
+    # 2.6) "[e북]24/7 1권" 같이 문자열 어딘가에 "숫자/숫자" 패턴이 있으면
+    #       그 패턴만 꺼내서 반환
+    slash_match = re.search(r"\d+/\d+", t)
+    if slash_match and t.startswith('['):
+        return slash_match.group()
+
     # 3) 나머지 정제 로직
     t = re.sub(r"\s*제\s*\d+[권화]", "", t)
-    for k, v in {
-        "Un-holyNight": "UnholyNight", "?": "", "~": "",
-        ",": "", "-": "", "_": ""
-    }.items():
+    for k, v in {"Un-holyNight": "UnholyNight", "?": "", "~": "", ",": "", "-": "", "_": ""}.items():
         t = t.replace(k, v)
     t = re.sub(r"\([^)]*\)|\[[^\]]*\]", "", t)
     t = re.sub(r"\d+[권화부회]", "", t)
