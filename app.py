@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 import re, io, pathlib
 import openpyxl, xlsxwriter
+from datetime import datetime, date
 
 # ── (고정) ③번 파일 경로 ─────────────────────────────────────────────
 DATA_DIR   = pathlib.Path(__file__).parent / "data"
@@ -23,6 +24,26 @@ def pick(cands, df):
         if c in df.columns:
             return c
     raise ValueError(f"가능한 컬럼이 없습니다 ➜ {cands}")
+
+def clean_title(txt) -> str:
+    # datetime/date 객체는 월일 포맷으로
+    if isinstance(txt, (datetime, date)):
+        return f"{txt.month}월{txt.day}일"
+
+    t = str(txt).strip()
+
+    # 이미 "7월24일"처럼 포맷된 문자열은 그대로
+    if re.fullmatch(r"\d{1,2}월\d{1,2}일", t):
+        return t
+
+    # "24/7" 같은 슬래시 포함 숫자 패턴은 그대로
+    if re.fullmatch(r"\d+/\d+", t):
+        return t
+
+    # 이하 기존 정제 로직...
+    t = re.sub(r"\s*제\s*\d+[권화]", "", t)
+    # … 나머지 정제 코드 …
+    return t.replace(" ", "").strip()
 
 def clean_title(txt: str) -> str:
     t = str(txt)
