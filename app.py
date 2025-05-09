@@ -247,13 +247,22 @@ if st.button("🟢 매핑 실행"):
     }, inplace=True)
 
     # ── 판매채널_콘텐츠명(vlookup) 열 삽입 ─────────────────────────────────
-    lookup = dict(zip(result["정제_상품명"], result["정산서_콘텐츠명"]))
-    pos = result.columns.get_loc("매핑_콘텐츠마스터명")
+    # 1) 실제 매핑된 행만 골라낼 마스크
+    mask = result["매핑_콘텐츠마스터ID"] != ""
 
-    # 매핑_콘텐츠마스터명 값을 키로 lookup dict 에서 찾아오되,
-    # 매칭되는 값이 없으면 빈 문자열로 처리
+    # 2) 매핑된 행만으로 lookup 사전 생성
+    lookup = dict(
+        zip(
+            result.loc[mask, "매핑_콘텐츠마스터명"],
+            result.loc[mask, "정산서_콘텐츠명"]
+        )
+    )
+
+    # 3) 매핑된 콘텐츠마스터명으로만 매핑 → 없는 건 빈 문자열
     values = result["매핑_콘텐츠마스터명"].map(lookup).fillna("")
 
+    # 4) “매핑_콘텐츠마스터명” 바로 앞에 새 열로 삽입
+    pos = result.columns.get_loc("매핑_콘텐츠마스터명")
     result.insert(pos, "판매채널_콘텐츠명", values)
 
     # 12) 엑셀 저장 + 서식 + 숨김
