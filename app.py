@@ -246,21 +246,19 @@ if st.button("🟢 매핑 실행"):
         "최종_매핑결과":            "매핑_콘텐츠마스터ID",
     }, inplace=True)
 
-    # ── 판매채널_콘텐츠명(vlookup) 열 삽입 ─────────────────────────────────
-    # 1) 매핑된 행만 골라낼 마스크
+   # ── 판매채널_콘텐츠명(vlookup) 열 삽입 ─────────────────────────────────
+    # 1) 매핑된 ID가 빈 문자열이 아닌 행만 골라내는 1차원 Boolean Series
     mask = result["매핑_콘텐츠마스터ID"] != ""
 
-    # 2) .loc 호출 뒤 .values 또는 .tolist() 로 1차원 배열/리스트로 변환
+    # 2) 키(key)와 값(value)를 일차원 배열로 추출
     keys   = result.loc[mask, "매핑_콘텐츠마스터명"].values
     values = result.loc[mask, "정산서_콘텐츠명"].values
 
-    # 3) dict(zip(...)) 으로 lookup 테이블 생성
+    # 3) lookup 딕셔너리 생성 후, map으로 새 열 채우기
     lookup = dict(zip(keys, values))
-
-    # 4) 원래대로 map 하고 빈값 채우기
     channel = result["매핑_콘텐츠마스터명"].map(lookup).fillna("")
 
-    # 5) 열 삽입
+    # 4) 생성했던 위치에 삽입
     pos = result.columns.get_loc("매핑_콘텐츠마스터명")
     result.insert(pos, "판매채널_콘텐츠명", channel)
 
