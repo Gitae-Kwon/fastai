@@ -39,12 +39,13 @@ def clean_title(txt) -> str:
     # 3) 맨 끝의 "숫자/숫자" (예: 2/3, 5/5) 는 통째로 제거
     t = re.sub(r'\s*\d+/\d+$', '', t)
 
-    # 4) 문자열 어딘가에 "24/7" 이 있으면 "24/7"만 반환
-    if "24/7" in t:
-        return "24/7"
+    # 예외 문자열 리스트
+    exceptions = ["24/7", "실명마제", "라마대제"]
 
-    if "실명마제" in t:
-        return "실명마제"
+    # 리스트에 있는 예외 중 하나라도 포함되면 그 값을 반환
+    for ex in exceptions:
+        if ex in t:
+            return ex
 
     # 3) 나머지 정제 로직
     t = re.sub(r"\s*제\s*\d+[권화]", "", t)
