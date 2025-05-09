@@ -43,6 +43,9 @@ def clean_title(txt) -> str:
     if "24/7" in t:
         return "24/7"
 
+    if "실명마제" in t:
+        return "실명마제"
+
     # 3) 나머지 정제 로직
     t = re.sub(r"\s*제\s*\d+[권화]", "", t)
     for k, v in {"Un-holyNight": "UnholyNight", "?": "", "~": "", ",": "", "-": "", "_": ""}.items():
