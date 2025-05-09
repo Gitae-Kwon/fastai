@@ -225,6 +225,16 @@ if st.button("🟢 매핑 실행"):
         "최종_매핑결과":            "매핑_콘텐츠마스터ID",
     }, inplace=True)
 
+    # ── 판매채널_콘텐츠명(vlookup) 열 삽입 ─────────────────────────────────
+    lookup = dict(zip(result["정제_상품명"], result["정산서_콘텐츠명"]))
+    pos = result.columns.get_loc("매핑_콘텐츠마스터명")
+
+    # 매핑_콘텐츠마스터명 값을 키로 lookup dict 에서 찾아오되,
+    # 매칭되는 값이 없으면 빈 문자열로 처리
+    values = result["매핑_콘텐츠마스터명"].map(lookup).fillna("")
+
+    result.insert(pos, "판매채널_콘텐츠명", values)
+
     # 12) 엑셀 저장 + 헤더 서식 + 숨김처리 ─────────────────────────────
     buf = io.BytesIO()
 
