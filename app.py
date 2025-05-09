@@ -235,47 +235,31 @@ if st.button("🟢 매핑 실행"):
 
     result.insert(pos, "판매채널_콘텐츠명", values)
 
-    # 12) 엑셀 저장 + 헤더 서식 + 숨김처리 ─────────────────────────────
+    # 12) 엑셀 저장 + 서식 + 숨김
     buf = io.BytesIO()
-
-    visible_cols = {            # ❖ 숨기지 않을 열
-        "S2_콘텐츠명",
-        "S2_정제콘텐츠명",
-        "S2_판매채널콘텐츠ID",
-        "정제_상품명",
-        "매핑_판매채널콘텐츠ID",
-        "매핑_콘텐츠마스터ID",
-        "매핑_콘텐츠마스터명",
-        "미매핑_콘텐츠마스터명",
-        "정산서_콘텐츠명"
-        "판매채널_콘텐츠명"
-    #    c2,  # 소문자 c2: 원본 플랫폼 파일의 제목 컬럼
+    visible = {
+        "S2_콘텐츠명","S2_정제콘텐츠명","S2_판매채널콘텐츠ID",
+        "정제_상품명","매핑_판매채널콘텐츠ID","매핑_콘텐츠마스터ID",
+        "매핑_콘텐츠마스터명","미매핑_콘텐츠마스터명","정산서_콘텐츠명","판매채널_콘텐츠명"
     }
-
     with pd.ExcelWriter(buf, engine="xlsxwriter") as writer:
         result.to_excel(writer, sheet_name="매핑결과", index=False)
-
-        wb = writer.book
-        ws = writer.sheets["매핑결과"]
-        # ⑥ ★ 헤더 길이에 맞춰 열 너비 자동 조정
+        wb = writer.book; ws = writer.sheets["매핑결과"]
+        # 열 너비 자동 조정
         for col_idx, col_name in enumerate(result.columns):
-            width = len(col_name) + 1
-            ws.set_column(col_idx, col_idx, width)    
-
+            # 첫 번째 데이터 행의 값
+            first_val = result.iloc[0, col_idx]
+            first_text = "" if pd.isna(first_val) else str(first_val)
+            # 헤더 길이 vs. 데이터 길이 중 큰 쪽 + 여유 1칸
+            width = max(len(col_name), len(first_text)) + 1
+            ws.set_column(col_idx, col_idx, width)
         # 헤더 색상
-        fmt_yellow = wb.add_format({"bg_color": "#FFFFCC", "bold": True, "border": 1})
-        fmt_green  = wb.add_format({"bg_color": "#99FFCC", "bold": True, "border": 1})
-
-        for col_idx, col_name in enumerate(result.columns):
-            # 서식
-            if col_name in {"매핑_콘텐츠마스터명", "매핑_콘텐츠마스터ID", "판매채널_콘텐츠명"}:
-                ws.write(0, col_idx, col_name, fmt_yellow)
-            elif col_name == "미매핑_콘텐츠마스터명":
-                ws.write(0, col_idx, col_name, fmt_green)
-
-            # 숨김
-            if col_name not in visible_cols:
-                ws.set_column(col_idx, col_idx, None, None, {"hidden": True})
+        fy = wb.add_format({"bg_color":"#FFFFCC","bold":True,"border":1})
+        fg = wb.add_format({"bg_color":"#99FFCC","bold":True,"border":1})
+        for i, name in enumerate(result.columns):
+            if name in {"매핑_콘텐츠마스터명","매핑_콘텐츠마스터ID","판매채널_콘텐츠명"}: ws.write(0,i,name,fy)
+            elif name=="미매핑_콘텐츠마스터명": ws.write(0,i,name,fg)
+            if name not in visible: ws.set_column(i,i,None,None,{"hidden":True})
 
     # 13) 다운로드 ----------------------------------------------------
     st.success("✅ 매핑 완료! 아래 버튼으로 다운로드해주세요.")
