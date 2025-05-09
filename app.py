@@ -27,17 +27,16 @@ def pick(cands, df):
 
 def clean_title(txt) -> str:
     t = str(txt).strip()
+
     # 0) 예외 패턴: 이 안에 들어 있으면 그 값만 꺼내서 반환
     exceptions = ["24/7", "실명마제", "라마대제"]
     for ex in exceptions:
-        if ex in t0:
+        if ex in t:
             return ex
-            
+
     # 1) 진짜 날짜(datetime/date) 객체면 f"{월}월{일}일" 로
     if isinstance(txt, (datetime, date)):
         return f"{txt.month}월{txt.day}일"
-
-    
 
     # 2) 이미 "7월24일" 처럼 월일 패턴이면 그대로
     if re.fullmatch(r"\d{1,2}월\d{1,2}일", t):
@@ -45,7 +44,6 @@ def clean_title(txt) -> str:
 
     # 3) 맨 끝의 "숫자/숫자" (예: 2/3, 5/5) 는 통째로 제거
     t = re.sub(r'\s*\d+/\d+$', '', t)
-
 
     # 3) 나머지 정제 로직
     t = re.sub(r"\s*제\s*\d+[권화]", "", t)
