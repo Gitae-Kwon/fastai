@@ -26,11 +26,18 @@ def pick(cands, df):
     raise ValueError(f"가능한 컬럼이 없습니다 ➜ {cands}")
 
 def clean_title(txt) -> str:
+    # 0) 예외 패턴: 이 안에 들어 있으면 그 값만 꺼내서 반환
+    exceptions = ["24/7", "실명마제", "라마대제"]
+    t0 = str(txt).strip()
+    for ex in exceptions:
+        if ex in t0:
+            return ex
+            
     # 1) 진짜 날짜(datetime/date) 객체면 f"{월}월{일}일" 로
     if isinstance(txt, (datetime, date)):
         return f"{txt.month}월{txt.day}일"
 
-    t = str(txt).strip()
+    
 
     # 2) 이미 "7월24일" 처럼 월일 패턴이면 그대로
     if re.fullmatch(r"\d{1,2}월\d{1,2}일", t):
@@ -39,13 +46,6 @@ def clean_title(txt) -> str:
     # 3) 맨 끝의 "숫자/숫자" (예: 2/3, 5/5) 는 통째로 제거
     t = re.sub(r'\s*\d+/\d+$', '', t)
 
-    # 예외 문자열 리스트
-    exceptions = ["24/7", "실명마제", "라마대제"]
-
-    # 리스트에 있는 예외 중 하나라도 포함되면 그 값을 반환
-    for ex in exceptions:
-        if ex in t:
-            return ex
 
     # 3) 나머지 정제 로직
     t = re.sub(r"\s*제\s*\d+[권화]", "", t)
