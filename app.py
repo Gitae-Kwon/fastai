@@ -26,9 +26,9 @@ def pick(cands, df):
     raise ValueError(f"가능한 컬럼이 없습니다 ➜ {cands}")
 
 def clean_title(txt) -> str:
+    t = str(txt).strip()
     # 0) 예외 패턴: 이 안에 들어 있으면 그 값만 꺼내서 반환
     exceptions = ["24/7", "실명마제", "라마대제"]
-    t0 = str(txt).strip()
     for ex in exceptions:
         if ex in t0:
             return ex
