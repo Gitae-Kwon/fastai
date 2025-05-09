@@ -36,11 +36,12 @@ def clean_title(txt) -> str:
     if re.fullmatch(r"\d{1,2}월\d{1,2}일", t):
         return t
 
-    # 2.5) "[e북]24/7 1권" 같이 문자열 어딘가에 "숫자/숫자" 패턴이 있으면
-    #      그 패턴만 꺼내서 반환
-    slash_match = re.search(r"\d+/\d+", t)
-    if slash_match:
-        return slash_match.group()
+    # 3) 맨 끝의 "숫자/숫자" (예: 2/3, 5/5) 는 통째로 제거
+    t = re.sub(r'\s*\d+/\d+$', '', t)
+
+    # 4) 문자열 어딘가에 "24/7" 이 있으면 "24/7"만 반환
+    if "24/7" in t:
+        return "24/7"
 
     # 3) 나머지 정제 로직
     t = re.sub(r"\s*제\s*\d+[권화]", "", t)
