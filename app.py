@@ -65,7 +65,6 @@ def clean_title(txt) -> str:
         # ▶️ 추가: 유니코드 공백도 포함해서 완전히 제거
     t = ''.join(t.split())  # 모든 공백 제거 (띄어쓰기 포함)
     t = unicodedata.normalize("NFKC", t)  # 유사 문자 정규화
-    return ''.join(t.split())  # ← 여기가 핵심
 
 # ── UI ────────────────────────────────────────────────────────────────
 st.title("📁 판매채널 및 콘텐츠마스터ID 매핑")
