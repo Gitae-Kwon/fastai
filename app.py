@@ -83,17 +83,17 @@ f2 = st.file_uploader(
 # ③ A/B 법인 선택 (고정된 data 폴더 내 파일 사용)
 choice3 = st.selectbox(
     "③ 콘텐츠마스터 매핑 법인을 선택해주세요",
-    ("키다리스튜디오", "레진KR", "레진JP"),
+    ("키다리스튜디오", "레진KR", "키다리스튜디오_웹툰"),
     help="선택한 법인을 기준으로 IPS 콘텐츠마스터 ID와 매핑 합니다."
 )
 
 # 선택에 따라 사용할 3번 파일 경로 결정
-if choice3 == "키다리스튜디오":
+if choice3 == "키다리스튜디오_소설":
     file3_path = DATA_DIR / "kidari_contents.xlsx"
 elif choice3 == "레진KR":
     file3_path = DATA_DIR / "lezhin_contents.xlsx"
-else:  # 레진 JP
-    file3_path = DATA_DIR / "lezhinjp_contents.xlsx"
+else:  # 키다리스튜디오_웹툰
+    file3_path = DATA_DIR / "kidari_wentoons.xlsx"
 
 # ④ 저장 파일명 기본값: 업로드한 f2 파일명(stem) + '매핑'
 from pathlib import Path
