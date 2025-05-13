@@ -51,6 +51,8 @@ def clean_title(txt) -> str:
     for k, v in {"Un-holyNight": "UnholyNight", "?": "", "~": "", ",": "", "-": "", "_": ""}.items():
         t = t.replace(k, v)
     t = re.sub(r"\([^)]*\)|\[[^\]]*\]", "", t)
+    # ▶ 전각 괄호 제거
+    t = re.sub(r"【[^】]*】", "", t)
     t = unicodedata.normalize("NFKC", t) #유니코드 정리 추가
     t = re.sub(r"\d+[권화부회]", "", t)
     for kw in [
