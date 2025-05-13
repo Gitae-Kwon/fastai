@@ -33,18 +33,18 @@ def clean_title(txt) -> str:
     exceptions = ["24/7", "실명마제", "라마대제"]
     for ex in exceptions:
         if ex in t:
-            return ex
+            return ex.lower()
 
     # 1) 진짜 날짜(datetime/date) 객체면 f"{월}월{일}일" 로
     if isinstance(txt, (datetime, date)):
-        return f"{txt.month}월{txt.day}일"
+        return f"{txt.month}월{txt.day}일".lower()
 
     # 2) 이미 "7월24일" 처럼 월일 패턴이면 그대로
     if re.fullmatch(r"\d{1,2}월\d{1,2}일", t):
-        return t
+        return t.lower()
 
     # 3) 맨 끝의 "숫자/숫자" (예: 2/3, 5/5) 는 통째로 제거
-    t = re.sub(r'\s*\d+/\d+$', '', t)
+    t = re.sub(r'\s*\d+/\d+$', '', t).lower()
 
     # 3) 나머지 정제 로직
     t = re.sub(r"\s*제\s*\d+[권화]", "", t)
@@ -147,8 +147,8 @@ if st.button("🟢 매핑 실행"):
 
     # 4) 제목 정제 -----------------------------------------------------
     df1["정제_콘텐츠명"]  = df1[c1].apply(clean_title)
-    df2["정제_상품명"]    = df2[c2].apply(clean_title)
-    df3["정제_콘텐츠3명"] = df3[c3].apply(clean_title)
+    df2["정제_상품명"]    = (df2[c2].apply(clean_title).str.lower())
+    df3["정제_콘텐츠3명"] = (df3[c3].apply(clean_title).str.lower())
 
     # 5) 1차 매핑 -----------------------------------------------------
     map1 = (
