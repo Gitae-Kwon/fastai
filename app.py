@@ -88,12 +88,16 @@ choice3 = st.selectbox(
 )
 
 # 선택에 따라 사용할 3번 파일 경로 결정
-if choice3 == "키다리스튜디오_소설":
++# 선택에 따라 사용할 3번 파일 경로 결정
+if choice3 == "키다리스튜디오":
     file3_path = DATA_DIR / "kidari_contents.xlsx"
 elif choice3 == "레진KR":
     file3_path = DATA_DIR / "lezhin_contents.xlsx"
-else:  # 키다리스튜디오_웹툰
+elif choice3 == "키다리스튜디오_웹툰":
     file3_path = DATA_DIR / "kidari_webtoon.xlsx"
+else:
+   st.error(f"지원하지 않는 법인입니다: {choice3}")
+    st.stop()
 
 # ④ 저장 파일명 기본값: 업로드한 f2 파일명(stem) + '매핑'
 from pathlib import Path
