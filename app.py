@@ -51,6 +51,7 @@ def clean_title(txt) -> str:
     for k, v in {"Un-holyNight": "UnholyNight", "?": "", "~": "", ",": "", "-": "", "_": ""}.items():
         t = t.replace(k, v)
     t = re.sub(r"\([^)]*\)|\[[^\]]*\]", "", t)
+    t = unicodedata.normalize("NFKC", t) #유니코드 정리 추가
     t = re.sub(r"\d+[권화부회]", "", t)
     for kw in [
         "개정판 l", "개정판", "외전", "무삭제본", "무삭제판", "합본",
@@ -62,8 +63,7 @@ def clean_title(txt) -> str:
     t = re.sub(r"[\.~\-–—!@#$%^&*_=+\\|/:;\"'’`<>?，｡､{}()]", "", t)
     t = t.replace("[", "").replace("]", "")
     t = re.sub(r"특별$", "", t)
-         # 🔽 공백 및 유니코드 정리 추가
-    t = unicodedata.normalize("NFKC", t)
+    # 🔽 공백 추가
     t = ''.join(t.split())  # 모든 공백 제거
     return t.strip()
 
