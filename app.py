@@ -88,7 +88,6 @@ choice3 = st.selectbox(
 )
 
 # 선택에 따라 사용할 3번 파일 경로 결정
-+# 선택에 따라 사용할 3번 파일 경로 결정
 if choice3 == "키다리스튜디오":
     file3_path = DATA_DIR / "kidari_contents.xlsx"
 elif choice3 == "레진KR":
