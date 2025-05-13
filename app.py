@@ -93,7 +93,7 @@ if choice3 == "키다리스튜디오_소설":
 elif choice3 == "레진KR":
     file3_path = DATA_DIR / "lezhin_contents.xlsx"
 else:  # 키다리스튜디오_웹툰
-    file3_path = DATA_DIR / "kidari_wentoons.xlsx"
+    file3_path = DATA_DIR / "kidari_webtoon.xlsx"
 
 # ④ 저장 파일명 기본값: 업로드한 f2 파일명(stem) + '매핑'
 from pathlib import Path
