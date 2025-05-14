@@ -94,20 +94,20 @@ choice3 = st.selectbox(
 )
 
 # 법인 → 파일명 맵
-mapping3 = {
-    "키다리스튜디오":      "kidari_contents.xlsx",
-    "레진KR":            "lezhin_contents.xlsx",
-    "키다리스튜디오_웹툰": "kidari_webtoon.xlsx",
-}
+#mapping3 = {
+#    "키다리스튜디오":      "kidari_contents.xlsx",
+#    "레진KR":            "lezhin_contents.xlsx",
+#    "키다리스튜디오_웹툰": "kidari_webtoon.xlsx",
+#}
 
-# 선택된 값으로 파일 경로 결정
-try:
-    file3_path = DATA_DIR / mapping3[choice3]
-except KeyError:
-    st.error(f"지원하지 않는 법인입니다: {choice3}")
-    st.stop()
+# ── (수정) 법인별 안내 문구 매핑
+# display_msgs = {
+#    "키다리스튜디오":        "키다리스튜디오 소설 파일을 사용합니다",
+#    "레진KR":              "레진KR 파일을 사용합니다",
+#    "키다리스튜디오 웹툰":   "키다리스튜디오 웹툰 파일을 사용합니다"
+#}
 
-st.write(f"→ `{file3_path.name}` 파일을 사용합니다.")  # 실제로 어떤 파일을 쓰는지 화면에 찍어 봅시다
+#st.write(f"→ {display_msgs.get(choice3, '선택된 파일을 사용합니다')}")
 
 # ④ 저장 파일명 기본값: 업로드한 f2 파일명(stem) + '매핑'
 from pathlib import Path
