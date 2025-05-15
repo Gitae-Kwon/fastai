@@ -86,28 +86,28 @@ f2 = st.file_uploader(
     type="xlsx",
 )
 
-# ③ A/B 법인 선택
-choice3 = st.selectbox(
-    "③ 콘텐츠마스터 매핑 법인을 선택해주세요",
-    ("키다리스튜디오 소설", "레진KR", "키다리스튜디오 웹툰"),
-    help="선택한 법인을 기준으로 IPS 콘텐츠마스터 ID와 매핑합니다."
-)
-
-# 법인 → 파일명 맵
+# ── 법인 → 파일명 맵 ─────────────────────────────────────────────────
 mapping3 = {
-    "키다리스튜디오":      "kidari_contents.xlsx",
-    "레진KR":            "lezhin_contents.xlsx",
-    "키다리스튜디오_웹툰": "kidari_webtoon.xlsx",
+    "키다리스튜디오 소설":      "kidari_contents.xlsx",
+    "레진KR":               "lezhin_contents.xlsx",
+    "키다리스튜디오 웹툰":     "kidari_webtoon.xlsx",
 }
 
-# ── (수정) 법인별 안내 문구 매핑
+# ── 선택된 법인으로 file3_path 정의 ───────────────────────────────────
+try:
+    file3_path = DATA_DIR / mapping3[choice3]
+except KeyError:
+    st.error(f"지원하지 않는 법인입니다: {choice3}")
+    st.stop()
+
+# ── (수정) 법인별 안내 문구 매핑 ─────────────────────────────────────
 display_msgs = {
-    "키다리스튜디오 소설":        "키다리스튜디오 소설 파일을 사용합니다",
+    "키다리스튜디오 소설":    "키다리스튜디오 소설 파일을 사용합니다",
     "레진KR":              "레진KR 파일을 사용합니다",
-    "키다리스튜디오 웹툰":   "키다리스튜디오 웹툰 파일을 사용합니다"
+    "키다리스튜디오 웹툰":   "키다리스튜디오 웹툰 파일을 사용합니다",
 }
 
-st.write(f"→ {display_msgs.get(choice3, '선택된 파일을 사용합니다')}")
+st.write(f"→ {display_msgs[choice3]}")
 
 # ④ 저장 파일명 기본값: 업로드한 f2 파일명(stem) + '매핑'
 from pathlib import Path
