@@ -54,8 +54,9 @@ def clean_title(txt) -> str:
     # ▶ 전각 괄호 제거
     t = re.sub(r"【[^】]*】", "", t)
 
-    # ▶ '세트구매'를 먼저 제거
-    t = re.sub(r"세트구매", "", t)
+    # ▶ 선행 제거 패턴: '세트구매', '난세의서편' 등 원하는 키워드를 먼저 제거
+    for pat in ["세트구매", "난세의 서  편", "초혼의 사자 편", "전설의 부활 편"]:
+        t = re.sub(pat, "", t)
 
     t = unicodedata.normalize("NFKC", t)
     t = re.sub(r"\d+[권화부회]", "", t)
