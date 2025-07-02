@@ -39,7 +39,7 @@ def calculate_dew_point(temp_c, rh):
 st.title("🌡️ 자동 위치 기반 체감온도 계산기")
 
 # API Key 입력
-API_KEY = "629f65f9a3aa0600b09e6171855f3afe"
+API_KEY = "c239f9f652ba585441a6f0e5db6f2226"
 
 if API_KEY:
     lat, lon, city = get_location_by_ip()
