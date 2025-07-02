@@ -38,8 +38,8 @@ def calculate_dew_point(temp_c, rh):
 # === Streamlit UI ===
 st.title("🌡️ 자동 위치 기반 체감온도 계산기")
 
-# API Key 입력
-API_KEY = "c239f9f652ba585441a6f0e5db6f2226"
+# 🔐 API Key를 secrets에서 불러오기
+API_KEY = st.secrets["OWM_KEY"]
 
 if API_KEY:
     lat, lon, city = get_location_by_ip()
@@ -72,4 +72,4 @@ if API_KEY:
     else:
         st.error("위치 정보를 가져올 수 없습니다.")
 else:
-    st.warning("먼저 OpenWeatherMap API 키를 입력하세요.")
+    st.warning("먼저 OpenWeatherMap API 키를 설정하세요.")
