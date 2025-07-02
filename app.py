@@ -170,6 +170,104 @@ def calculate_heat_index(temp_c, rh):
 def calculate_dew_point(temp_c, rh):
     return round(temp_c - ((100 - rh)/5), 1)
 
+# === Function: 이슬점을 반영한 통합 체감온도 계산 ===
+def calculate_comprehensive_feels_like(temp_c, humidity, dew_point):
+    """
+    이슬점과 습도를 모두 고려한 포괄적 체감온도 계산
+    - 기본 Heat Index
+    - 이슬점 보정 (불쾌지수 반영)
+    - 습도 차이에 따른 추가 보정
+    """
+    # 1. 기본 Heat Index
+    base_heat_index = calculate_heat_index(temp_c, humidity)
+    
+    # 2. 이슬점 보정 계산
+    # 이슬점이 높을수록(습한 공기) 더 불쾌함
+    dew_point_correction = 0
+    if dew_point > 24:  # 매우 습함
+        dew_point_correction = 3.0
+    elif dew_point > 21:  # 습함
+        dew_point_correction = 2.0
+    elif dew_point > 18:  # 약간 습함
+        dew_point_correction = 1.0
+    elif dew_point > 15:  # 보통
+        dew_point_correction = 0
+    elif dew_point > 10:  # 건조
+        dew_point_correction = -0.5
+    else:  # 매우 건조
+        dew_point_correction = -1.0
+    
+    # 3. 온도와 이슬점의 차이 보정
+    # 차이가 클수록 덜 불쾌함 (건조함)
+    temp_dew_diff = temp_c - dew_point
+    if temp_dew_diff > 15:  # 매우 건조
+        diff_correction = -1.5
+    elif temp_dew_diff > 10:  # 건조
+        diff_correction = -1.0
+    elif temp_dew_diff > 5:  # 보통
+        diff_correction = -0.5
+    else:  # 습함
+        diff_correction = 0.5
+    
+    # 4. 최종 체감온도 계산
+    comprehensive_feels_like = base_heat_index + dew_point_correction + diff_correction
+    
+    return round(comprehensive_feels_like, 1), dew_point_correction, diff_correction
+
+# === Function: 체감온도 상세 분석 ===
+def analyze_comfort_level(temp, humidity, dew_point, feels_like):
+    """체감온도에 대한 상세 분석 제공"""
+    
+    analysis = {
+        "comfort_level": "",
+        "humidity_effect": "",
+        "dew_point_effect": "",
+        "recommendations": []
+    }
+    
+    # 체감온도 기준 쾌적도
+    if feels_like < 20:
+        analysis["comfort_level"] = "쾌적함 😊"
+    elif feels_like < 25:
+        analysis["comfort_level"] = "약간 따뜻함 🙂"
+    elif feels_like < 28:
+        analysis["comfort_level"] = "따뜻함 😐"
+    elif feels_like < 32:
+        analysis["comfort_level"] = "더움 😓"
+    elif feels_like < 35:
+        analysis["comfort_level"] = "매우 더움 🥵"
+    else:
+        analysis["comfort_level"] = "위험 수준 🔥"
+    
+    # 습도 영향 분석
+    if humidity > 80:
+        analysis["humidity_effect"] = "매우 습함 - 땀 증발이 어려워 더 덥게 느껴집니다"
+        analysis["recommendations"].append("실내에서는 제습기 사용을 권장합니다")
+    elif humidity > 60:
+        analysis["humidity_effect"] = "습함 - 체감온도가 실온보다 높습니다"
+        analysis["recommendations"].append("통풍이 잘 되는 곳에 머무르세요")
+    elif humidity > 40:
+        analysis["humidity_effect"] = "적정 습도 - 쾌적한 수준입니다"
+    else:
+        analysis["humidity_effect"] = "건조함 - 피부와 호흡기에 주의하세요"
+        analysis["recommendations"].append("충분한 수분 섭취와 보습이 필요합니다")
+    
+    # 이슬점 영향 분석
+    if dew_point > 24:
+        analysis["dew_point_effect"] = "매우 습한 공기 - 극도로 불쾌합니다"
+        analysis["recommendations"].append("야외 활동을 피하고 에어컨이 있는 곳에 머무르세요")
+    elif dew_point > 21:
+        analysis["dew_point_effect"] = "습한 공기 - 불쾌감을 느낄 수 있습니다"
+        analysis["recommendations"].append("격렬한 운동은 피하세요")
+    elif dew_point > 18:
+        analysis["dew_point_effect"] = "약간 습한 공기 - 대부분 견딜 만합니다"
+    elif dew_point > 15:
+        analysis["dew_point_effect"] = "쾌적한 공기 - 좋은 날씨입니다"
+    else:
+        analysis["dew_point_effect"] = "건조한 공기 - 매우 쾌적합니다"
+    
+    return analysis
+
 # === Streamlit UI ===
 st.title("🌡️ 자동 위치 기반 체감온도 계산기")
 
@@ -215,32 +313,79 @@ if API_KEY:
         if temp is not None and humidity is not None:
             st.success(f"✅ 현재 기온: {temp}°C, 습도: {humidity}%")
             
+            # 기본 계산
             hi = calculate_heat_index(temp, humidity)
             dew = calculate_dew_point(temp, humidity)
             
-            st.markdown(f"### 🔥 체감온도 (Heat Index): **{hi}°C**")
-            st.markdown(f"### 💧 이슬점 온도: **{dew}°C**")
+            # 이슬점 반영한 통합 체감온도 계산
+            comprehensive_feels_like, dew_correction, diff_correction = calculate_comprehensive_feels_like(temp, humidity, dew)
             
-            # 상태 평가
-            if hi < 27:
-                st.info("→ 쾌적한 상태입니다.")
-            elif hi < 33:
-                st.warning("→ 다소 더운 상태입니다.")
-            elif hi < 40:
-                st.error("→ 매우 더움. 수분 섭취가 필요합니다!")
-            else:
-                st.error("🥵 폭열 수준! 외출을 자제하세요.")
-                
-            # 추가 정보 제공
+            # 체감온도 상세 분석
+            comfort_analysis = analyze_comfort_level(temp, humidity, dew, comprehensive_feels_like)
+            
+            # 결과 표시
             st.markdown("---")
-            st.subheader("📊 날씨 해석")
-            col1, col2, col3 = st.columns(3)
+            st.subheader("🌡️ 온도 분석 결과")
+            
+            # 메인 지표들
+            col1, col2, col3, col4 = st.columns(4)
             with col1:
                 st.metric("실제 온도", f"{temp}°C")
             with col2:
-                st.metric("체감 온도", f"{hi}°C", f"{hi-temp:+.1f}°C")
+                st.metric("기본 체감온도", f"{hi}°C", f"{hi-temp:+.1f}°C")
             with col3:
+                st.metric("**통합 체감온도**", f"{comprehensive_feels_like}°C", f"{comprehensive_feels_like-temp:+.1f}°C")
+            with col4:
                 st.metric("이슬점", f"{dew}°C")
+            
+            # 체감온도 보정 요인 설명
+            st.markdown("### 🔍 체감온도 보정 분석")
+            
+            correction_col1, correction_col2 = st.columns(2)
+            with correction_col1:
+                st.info(f"**이슬점 보정**: {dew_correction:+.1f}°C\n\n이슬점이 {dew}°C로 {comfort_analysis['dew_point_effect']}")
+                
+            with correction_col2:
+                temp_dew_diff = temp - dew
+                st.info(f"**건조도 보정**: {diff_correction:+.1f}°C\n\n온도-이슬점 차이: {temp_dew_diff:.1f}°C")
+            
+            # 전체적인 쾌적도 평가
+            st.markdown("### 📊 종합 쾌적도 평가")
+            
+            # 쾌적도 레벨에 따른 색상 표시
+            if comprehensive_feels_like < 25:
+                st.success(f"🎯 **{comfort_analysis['comfort_level']}**")
+            elif comprehensive_feels_like < 30:
+                st.warning(f"🎯 **{comfort_analysis['comfort_level']}**")
+            else:
+                st.error(f"🎯 **{comfort_analysis['comfort_level']}**")
+            
+            # 습도 영향
+            st.write(f"💧 **습도 영향**: {comfort_analysis['humidity_effect']}")
+            
+            # 권장사항
+            if comfort_analysis['recommendations']:
+                st.markdown("### 💡 권장사항")
+                for i, rec in enumerate(comfort_analysis['recommendations'], 1):
+                    st.write(f"{i}. {rec}")
+            
+            # 상세 수치 비교표
+            with st.expander("📋 상세 수치 비교"):
+                comparison_data = {
+                    "지표": ["실제 온도", "기본 체감온도 (Heat Index)", "통합 체감온도 (이슬점 반영)", "이슬점 온도"],
+                    "온도 (°C)": [temp, hi, comprehensive_feels_like, dew],
+                    "실온과의 차이": [0, hi-temp, comprehensive_feels_like-temp, dew-temp],
+                    "설명": [
+                        "측정된 실제 기온",
+                        "습도만 고려한 전통적 체감온도",
+                        "이슬점과 건조도까지 반영한 종합 체감온도",
+                        "공기 중 수증기가 포화되는 온도"
+                    ]
+                }
+                
+                import pandas as pd
+                df = pd.DataFrame(comparison_data)
+                st.dataframe(df, hide_index=True)
         else:
             st.error("날씨 정보를 가져올 수 없습니다.")
     
