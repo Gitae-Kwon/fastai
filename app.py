@@ -8,33 +8,34 @@ st.title("🌡️ 현재 위치 체감온도")
 API_KEY = st.secrets["OWM_KEY"]
 
 # 📍 JS로 GPS 위치 요청
-coords = st_javascript(
-    """
+coords = st_javascript("""
     () => new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                const lat = pos.coords.latitude.toFixed(6);
-                const lon = pos.coords.longitude.toFixed(6);
-                resolve(lat + "," + lon);
-            },
-            (err) => {
-                resolve("denied");
-            }
-        );
-    })
-    """
-)
+        if (!navigator.geolocation) {
+            resolve("unsupported");
+        } else {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lon = pos.coords.longitude.toFixed(6);
+                    resolve(`${lat},${lon}`);
+                },
+                (err) => {
+                    resolve("denied");
+                }
+            );
+        }
+    });
+""")
 
 # 📌 위치값 검증
 if coords is None:
-    st.info("⏳ 위치 정보를 가져오는 중입니다... (브라우저 위치 권한 허용 필요)")
-elif coords == "denied":
-    st.warning("🚫 위치 정보 접근이 거부되었습니다. 브라우저 권한 설정을 확인해주세요.")
+    st.info("⏳ 위치 정보를 가져오는 중입니다...")
+elif coords in ["denied", "unsupported"]:
+    st.warning("🚫 위치 정보 접근이 거부되었거나 브라우저에서 지원하지 않습니다.")
 elif isinstance(coords, str) and "," in coords:
     try:
-        lat_str, lon_str = coords.split(",")
-        lat, lon = float(lat_str), float(lon_str)
-        st.info(f"📍 현재 위치: 위도 {lat}, 경도 {lon}")
+        lat, lon = map(float, coords.split(","))
+        st.success(f"📍 현재 위치: 위도 {lat}, 경도 {lon}")
 
         # 🌤️ 날씨 정보 가져오기
         url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={API_KEY}&units=metric"
@@ -71,6 +72,7 @@ elif isinstance(coords, str) and "," in coords:
         else:
             st.error("🥵 폭염 수준! 외출을 자제하세요.")
     except Exception as e:
-        st.error(f"❗위치 데이터 처리 오류: {e}")
+        st.error(f"❌ 위치 데이터 파싱 오류: {e}")
 else:
-    st.error(f"⚠️ 잘못된 위치 데이터 형식: {coords}")
+    st.error(f"⚠️ 잘못된 위치 데이터 형식: {coords} (type: {type(coords)})")
+    st.code(f"coords: {coords} (type: {type(coords)})")
