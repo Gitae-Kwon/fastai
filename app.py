@@ -19,6 +19,8 @@ def get_browser_location():
         </div>
         
         <script>
+        let locationData = null;
+        
         function getLocation() {
             const resultDiv = document.getElementById('result');
             const btn = document.getElementById('location-btn');
@@ -32,6 +34,9 @@ def get_browser_location():
                         const lat = position.coords.latitude;
                         const lon = position.coords.longitude;
                         
+                        // 위치 데이터 저장
+                        locationData = { lat: lat, lon: lon };
+                        
                         // Streamlit으로 위치 정보 전달
                         window.parent.postMessage({
                             type: 'location_found',
@@ -44,9 +49,15 @@ def get_browser_location():
                                 <h4>✅ 위치 감지 성공!</h4>
                                 <p><strong>위도:</strong> ${lat.toFixed(6)}</p>
                                 <p><strong>경도:</strong> ${lon.toFixed(6)}</p>
-                                <p style="color: #666; font-size: 0.9em;">
-                                    위치 정보가 자동으로 설정됩니다.
-                                </p>
+                                <button onclick="analyzeWeather()" style="
+                                    background: #4CAF50; 
+                                    color: white; 
+                                    padding: 10px 20px; 
+                                    border: none; 
+                                    border-radius: 5px; 
+                                    cursor: pointer;
+                                    margin-top: 10px;
+                                ">🌡️ 바로 분석하기</button>
                             </div>
                         `;
                         btn.textContent = '✅ 위치 감지 완료';
@@ -73,13 +84,15 @@ def get_browser_location():
             }
         }
         
-        // 메시지 수신 리스너
-        window.addEventListener('message', function(event) {
-            if (event.data.type === 'location_found') {
-                // 위치 정보가 전달되었을 때 처리
-                console.log('위치 정보 수신:', event.data);
+        function analyzeWeather() {
+            if (locationData) {
+                window.parent.postMessage({
+                    type: 'analyze_weather',
+                    lat: locationData.lat,
+                    lon: locationData.lon
+                }, '*');
             }
-        });
+        }
         </script>
     </body>
     </html>
@@ -172,11 +185,11 @@ if API_KEY:
         
         # 브라우저 위치 API HTML
         html_location = get_browser_location()
-        st.components.v1.html(html_location, height=250)
+        st.components.v1.html(html_location, height=300)
         
-        # 수동으로 위치 입력 받기 (JavaScript에서 자동 전달이 안될 경우)
+        # 위치 감지 후 수동 입력 (자동 복사가 안되는 경우)
         st.markdown("---")
-        st.markdown("**브라우저에서 위치를 감지한 후 아래 버튼을 클릭하여 분석하세요:**")
+        st.markdown("**위치 감지 후 아래에 좌표를 입력하고 분석하세요:**")
         
         col1, col2 = st.columns(2)
         with col1:
@@ -184,14 +197,14 @@ if API_KEY:
         with col2:
             detected_lon = st.number_input("감지된 경도", value=0.0, format="%.6f", key="det_lon")
         
-        if st.button("🌐 현재 위치로 분석하기", type="primary"):
+        if st.button("🌡️ 현재 위치로 분석하기", type="primary"):
             if detected_lat != 0.0 or detected_lon != 0.0:
                 st.session_state.lat = detected_lat
                 st.session_state.lon = detected_lon
                 st.session_state.location_set = True
-                st.success("✅ 위치가 설정되었습니다!")
+                st.rerun()
             else:
-                st.warning("⚠️ 먼저 위 버튼을 클릭하여 위치를 감지하세요.")
+                st.warning("⚠️ 먼저 위 버튼을 클릭하여 위치를 감지하고 좌표를 입력하세요.")
     
     with tab2:
         st.markdown("### 도시명으로 검색")
