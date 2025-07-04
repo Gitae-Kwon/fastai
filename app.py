@@ -37,16 +37,31 @@ def get_browser_location():
                                 <h4>✅ 위치 감지 성공!</h4>
                                 <p><strong>위도:</strong> ${lat.toFixed(6)}</p>
                                 <p><strong>경도:</strong> ${lon.toFixed(6)}</p>
-                                <p style="color: #4CAF50; font-weight: bold;">🌡️ 날씨 정보를 분석하고 있습니다...</p>
+                                <p style="color: #4CAF50; font-weight: bold;">🌡️ 자동으로 분석을 시작합니다...</p>
                             </div>
                         `;
                         
-                        // 위치 정보를 즉시 Streamlit으로 전송하여 자동 분석
-                        window.parent.postMessage({
-                            type: 'location_and_analyze',
-                            lat: lat,
-                            lon: lon
-                        }, '*');
+                        // Streamlit의 좌표 입력 필드에 값 설정
+                        const latInput = parent.document.querySelector('input[data-testid="stNumberInput-Step"]');
+                        const lonInput = parent.document.querySelectorAll('input[data-testid="stNumberInput-Step"]')[1];
+                        
+                        if (latInput && lonInput) {
+                            // 입력 필드에 값 설정
+                            latInput.value = lat.toFixed(6);
+                            lonInput.value = lon.toFixed(6);
+                            
+                            // 입력 이벤트 발생시켜서 Streamlit이 인식하도록 함
+                            latInput.dispatchEvent(new Event('input', { bubbles: true }));
+                            lonInput.dispatchEvent(new Event('input', { bubbles: true }));
+                            
+                            // 잠시 후 분석 버튼 클릭
+                            setTimeout(() => {
+                                const analyzeBtn = parent.document.querySelector('button[data-testid="stButton"] p');
+                                if (analyzeBtn && analyzeBtn.textContent.includes('수동 입력으로 분석하기')) {
+                                    analyzeBtn.closest('button').click();
+                                }
+                            }, 500);
+                        }
                         
                         btn.textContent = '✅ 분석 완료';
                         btn.disabled = false;
@@ -97,15 +112,6 @@ def get_browser_location():
                 `;
             }
         }
-        
-        // 페이지 로드 시 메시지 수신 대기
-        window.addEventListener('message', function(event) {
-            if (event.data && event.data.type === 'analysis_complete') {
-                const btn = document.getElementById('location-btn');
-                btn.textContent = '🔄 다시 분석하기';
-                btn.disabled = false;
-            }
-        });
         </script>
     </body>
     </html>
@@ -212,8 +218,6 @@ if 'lat' not in st.session_state:
     st.session_state.lat = None
 if 'lon' not in st.session_state:
     st.session_state.lon = None
-if 'auto_analyze' not in st.session_state:
-    st.session_state.auto_analyze = False
 
 # API Key 확인
 try:
@@ -222,33 +226,13 @@ except:
     st.error("⚠️ secrets.toml 파일에 OWM_KEY가 설정되지 않았습니다.")
     API_KEY = None
 
-# JavaScript로부터 메시지 수신 처리
-if 'streamlit_script_has_run' not in st.session_state:
-    st.session_state.streamlit_script_has_run = True
-    
-    # JavaScript 메시지 수신을 위한 스크립트
-    st.markdown("""
-    <script>
-    window.addEventListener('message', function(event) {
-        if (event.data && event.data.type === 'location_and_analyze') {
-            // Streamlit으로 위치 정보 전달
-            window.parent.postMessage({
-                type: 'streamlit_location_update',
-                lat: event.data.lat,
-                lon: event.data.lon
-            }, '*');
-        }
-    });
-    </script>
-    """, unsafe_allow_html=True)
-
 if API_KEY:
     # 탭으로 위치 입력 방식 구분
     tab1, tab2 = st.tabs(["🌐 브라우저 위치 감지", "🏙️ 도시 검색"])
     
     with tab1:
         st.markdown("### 현재 위치 자동 감지")
-        st.info("💡 '현재위치 날씨정보' 버튼을 클릭하면 위치 감지 후 바로 분석됩니다!")
+        st.info("💡 '현재위치 날씨정보' 버튼을 클릭하면 위치 감지 후 자동으로 아래 좌표 입력 필드에 값이 채워지고 분석이 시작됩니다!")
         
         # 브라우저 위치 API HTML
         html_location = get_browser_location()
@@ -256,7 +240,7 @@ if API_KEY:
         
         # 위치 감지 후 수동 입력 옵션
         st.markdown("---")
-        st.markdown("**또는 직접 좌표를 입력하세요:**")
+        st.markdown("**좌표 입력 (위치 감지 성공 시 자동으로 채워짐):**")
         
         col1, col2 = st.columns(2)
         with col1:
@@ -269,7 +253,6 @@ if API_KEY:
                 st.session_state.lat = manual_lat
                 st.session_state.lon = manual_lon
                 st.session_state.location_set = True
-                st.session_state.auto_analyze = True
                 st.rerun()
             else:
                 st.warning("⚠️ 위도와 경도를 모두 입력해주세요.")
@@ -298,28 +281,10 @@ if API_KEY:
                         st.session_state.lat = city['lat']
                         st.session_state.lon = city['lon']
                         st.session_state.location_set = True
-                        st.session_state.auto_analyze = True
                         st.success(f"✅ 선택됨: {location_str}")
                         st.rerun()
             else:
                 st.error("❌ 검색 결과가 없습니다. 영어로 입력해보세요.")
-    
-    # URL 파라미터에서 위치 정보 확인 (JavaScript 메시지 처리)
-    query_params = st.query_params
-    if 'lat' in query_params and 'lon' in query_params:
-        try:
-            lat = float(query_params['lat'])
-            lon = float(query_params['lon'])
-            if lat != 0.0 and lon != 0.0:
-                st.session_state.lat = lat
-                st.session_state.lon = lon
-                st.session_state.location_set = True
-                st.session_state.auto_analyze = True
-                # 파라미터 정리
-                st.query_params.clear()
-                st.rerun()
-        except:
-            pass
     
     # 위치가 설정되었을 때 날씨 분석
     if st.session_state.location_set and st.session_state.lat and st.session_state.lon:
@@ -402,7 +367,6 @@ if API_KEY:
                     st.session_state.location_set = False
                     st.session_state.lat = None
                     st.session_state.lon = None
-                    st.session_state.auto_analyze = False
                     st.rerun()
             else:
                 st.error("❌ 날씨 정보를 가져올 수 없습니다. 다시 시도해주세요.")
