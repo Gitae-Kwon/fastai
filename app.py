@@ -14,14 +14,12 @@ def get_browser_location():
     <body>
         <div id="location-info">
             <h3>🌐 현재 위치 감지</h3>
-            <button onclick="getLocation()" id="location-btn">📍 현재 위치 가져오기</button>
+            <button onclick="getLocationAndAnalyze()" id="location-btn">📍 현재위치 날씨정보</button>
             <div id="result"></div>
         </div>
         
         <script>
-        let locationData = null;
-        
-        function getLocation() {
+        function getLocationAndAnalyze() {
             const resultDiv = document.getElementById('result');
             const btn = document.getElementById('location-btn');
             
@@ -34,44 +32,59 @@ def get_browser_location():
                         const lat = position.coords.latitude;
                         const lon = position.coords.longitude;
                         
-                        // 위치 데이터 저장
-                        locationData = { lat: lat, lon: lon };
-                        
-                        // Streamlit으로 위치 정보 전달
-                        window.parent.postMessage({
-                            type: 'location_found',
-                            lat: lat,
-                            lon: lon
-                        }, '*');
-                        
                         resultDiv.innerHTML = `
                             <div style="background: #e8f5e8; padding: 15px; border-radius: 10px; margin: 10px 0;">
                                 <h4>✅ 위치 감지 성공!</h4>
                                 <p><strong>위도:</strong> ${lat.toFixed(6)}</p>
                                 <p><strong>경도:</strong> ${lon.toFixed(6)}</p>
-                                <button onclick="analyzeWeather()" style="
-                                    background: #4CAF50; 
-                                    color: white; 
-                                    padding: 10px 20px; 
-                                    border: none; 
-                                    border-radius: 5px; 
-                                    cursor: pointer;
-                                    margin-top: 10px;
-                                ">🌡️ 바로 분석하기</button>
+                                <p style="color: #4CAF50; font-weight: bold;">🌡️ 날씨 정보를 분석하고 있습니다...</p>
                             </div>
                         `;
-                        btn.textContent = '✅ 위치 감지 완료';
+                        
+                        // 위치 정보를 즉시 Streamlit으로 전송하여 자동 분석
+                        window.parent.postMessage({
+                            type: 'location_and_analyze',
+                            lat: lat,
+                            lon: lon
+                        }, '*');
+                        
+                        btn.textContent = '✅ 분석 완료';
                         btn.disabled = false;
                     },
                     function(error) {
+                        let errorMessage = '';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMessage = '위치 접근이 거부되었습니다. 브라우저 설정에서 위치 권한을 허용해주세요.';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMessage = '위치 정보를 사용할 수 없습니다.';
+                                break;
+                            case error.TIMEOUT:
+                                errorMessage = '위치 요청 시간이 초과되었습니다.';
+                                break;
+                            default:
+                                errorMessage = '알 수 없는 오류가 발생했습니다.';
+                                break;
+                        }
+                        
                         resultDiv.innerHTML = `
                             <div style="background: #ffe8e8; padding: 15px; border-radius: 10px; margin: 10px 0;">
                                 <h4>❌ 위치 감지 실패</h4>
-                                <p>위치 권한을 허용해주세요.</p>
+                                <p>${errorMessage}</p>
+                                <p style="font-size: 12px; color: #666;">
+                                    💡 Chrome/Edge: 주소창 왼쪽 자물쇠 아이콘 클릭 → 위치 허용<br>
+                                    💡 Firefox: 주소창 왼쪽 방패 아이콘 클릭 → 위치 허용
+                                </p>
                             </div>
                         `;
                         btn.textContent = '🔄 다시 시도';
                         btn.disabled = false;
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 300000
                     }
                 );
             } else {
@@ -79,20 +92,20 @@ def get_browser_location():
                     <div style="background: #ffe8e8; padding: 15px; border-radius: 10px; margin: 10px 0;">
                         <h4>❌ 위치 서비스 미지원</h4>
                         <p>브라우저가 위치 서비스를 지원하지 않습니다.</p>
+                        <p>Chrome, Firefox, Safari 등의 최신 브라우저를 사용해주세요.</p>
                     </div>
                 `;
             }
         }
         
-        function analyzeWeather() {
-            if (locationData) {
-                window.parent.postMessage({
-                    type: 'analyze_weather',
-                    lat: locationData.lat,
-                    lon: locationData.lon
-                }, '*');
+        // 페이지 로드 시 메시지 수신 대기
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'analysis_complete') {
+                const btn = document.getElementById('location-btn');
+                btn.textContent = '🔄 다시 분석하기';
+                btn.disabled = false;
             }
-        }
+        });
         </script>
     </body>
     </html>
@@ -125,7 +138,9 @@ def get_weather(lat, lon, api_key):
                 'temp': res["main"]["temp"],
                 'humidity': res["main"]["humidity"],
                 'feels_like': res["main"]["feels_like"],
-                'weather_desc': res["weather"][0]["description"]
+                'weather_desc': res["weather"][0]["description"],
+                'city_name': res.get("name", "Unknown"),
+                'country': res.get("sys", {}).get("country", "")
             }
         else:
             st.error(f"날씨 API 오류: {response.status_code}")
@@ -137,6 +152,9 @@ def get_weather(lat, lon, api_key):
 # === Function: 체감온도 계산 ===
 def calculate_heat_index(temp_c, rh):
     """습도만 적용된 체감온도 (Heat Index)"""
+    if temp_c < 20:  # 낮은 온도에서는 Heat Index 공식이 부정확
+        return temp_c
+    
     T = temp_c * 9/5 + 32
     HI = (-42.379 + 2.04901523*T + 10.14333127*rh
           - 0.22475541*T*rh - 6.83783e-3*T**2
@@ -146,19 +164,46 @@ def calculate_heat_index(temp_c, rh):
 
 def calculate_dew_point(temp_c, rh):
     """이슬점 계산"""
-    return round(temp_c - ((100 - rh)/5), 1)
+    a = 17.27
+    b = 237.7
+    alpha = ((a * temp_c) / (b + temp_c)) + (rh / 100.0)
+    return round((b * alpha) / (a - alpha), 1)
 
 def calculate_comprehensive_feel(temp, humidity, dew_point):
     """습도와 이슬점이 적용된 종합 체감온도"""
-    # 습도 보정
-    humidity_factor = (humidity - 50) * 0.05
-    # 이슬점 보정
-    dew_factor = max(0, (dew_point - 15) * 0.1)
+    # 습도 보정 (50% 기준)
+    humidity_factor = (humidity - 50) * 0.03
+    # 이슬점 보정 (15°C 기준)
+    dew_factor = max(0, (dew_point - 15) * 0.15)
     
     return round(temp + humidity_factor + dew_factor, 1)
 
+def get_comfort_level(feel_temp):
+    """쾌적도 평가"""
+    if feel_temp < 10:
+        return "매우 추움 🥶", "#0066cc"
+    elif feel_temp < 16:
+        return "추움 😰", "#3399ff"
+    elif feel_temp < 20:
+        return "선선함 😊", "#66ccff"
+    elif feel_temp < 25:
+        return "쾌적 😃", "#00cc66"
+    elif feel_temp < 28:
+        return "따뜻함 😌", "#ffcc00"
+    elif feel_temp < 32:
+        return "더움 😓", "#ff6600"
+    else:
+        return "매우 더움 🥵", "#ff0000"
+
 # === Streamlit UI ===
+st.set_page_config(
+    page_title="🌡️ 위치 기반 체감온도 분석기",
+    page_icon="🌡️",
+    layout="wide"
+)
+
 st.title("🌡️ 위치 기반 체감온도 분석기")
+st.markdown("현재 위치의 날씨 정보를 바탕으로 실제 체감온도를 분석합니다.")
 
 # 세션 상태 초기화
 if 'location_set' not in st.session_state:
@@ -167,6 +212,8 @@ if 'lat' not in st.session_state:
     st.session_state.lat = None
 if 'lon' not in st.session_state:
     st.session_state.lon = None
+if 'auto_analyze' not in st.session_state:
+    st.session_state.auto_analyze = False
 
 # API Key 확인
 try:
@@ -175,40 +222,61 @@ except:
     st.error("⚠️ secrets.toml 파일에 OWM_KEY가 설정되지 않았습니다.")
     API_KEY = None
 
+# JavaScript로부터 메시지 수신 처리
+if 'streamlit_script_has_run' not in st.session_state:
+    st.session_state.streamlit_script_has_run = True
+    
+    # JavaScript 메시지 수신을 위한 스크립트
+    st.markdown("""
+    <script>
+    window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'location_and_analyze') {
+            // Streamlit으로 위치 정보 전달
+            window.parent.postMessage({
+                type: 'streamlit_location_update',
+                lat: event.data.lat,
+                lon: event.data.lon
+            }, '*');
+        }
+    });
+    </script>
+    """, unsafe_allow_html=True)
+
 if API_KEY:
     # 탭으로 위치 입력 방식 구분
     tab1, tab2 = st.tabs(["🌐 브라우저 위치 감지", "🏙️ 도시 검색"])
     
     with tab1:
         st.markdown("### 현재 위치 자동 감지")
-        st.info("💡 가장 정확한 위치를 얻을 수 있습니다!")
+        st.info("💡 '현재위치 날씨정보' 버튼을 클릭하면 위치 감지 후 바로 분석됩니다!")
         
         # 브라우저 위치 API HTML
         html_location = get_browser_location()
-        st.components.v1.html(html_location, height=300)
+        st.components.v1.html(html_location, height=350)
         
-        # 위치 감지 후 수동 입력 (자동 복사가 안되는 경우)
+        # 위치 감지 후 수동 입력 옵션
         st.markdown("---")
-        st.markdown("**위치 감지 후 아래에 좌표를 입력하고 분석하세요:**")
+        st.markdown("**또는 직접 좌표를 입력하세요:**")
         
         col1, col2 = st.columns(2)
         with col1:
-            detected_lat = st.number_input("감지된 위도", value=0.0, format="%.6f", key="det_lat")
+            manual_lat = st.number_input("위도", value=0.0, format="%.6f", key="manual_lat")
         with col2:
-            detected_lon = st.number_input("감지된 경도", value=0.0, format="%.6f", key="det_lon")
+            manual_lon = st.number_input("경도", value=0.0, format="%.6f", key="manual_lon")
         
-        if st.button("🌡️ 현재 위치로 분석하기", type="primary"):
-            if detected_lat != 0.0 or detected_lon != 0.0:
-                st.session_state.lat = detected_lat
-                st.session_state.lon = detected_lon
+        if st.button("🌡️ 수동 입력으로 분석하기"):
+            if manual_lat != 0.0 and manual_lon != 0.0:
+                st.session_state.lat = manual_lat
+                st.session_state.lon = manual_lon
                 st.session_state.location_set = True
+                st.session_state.auto_analyze = True
                 st.rerun()
             else:
-                st.warning("⚠️ 먼저 위 버튼을 클릭하여 위치를 감지하고 좌표를 입력하세요.")
+                st.warning("⚠️ 위도와 경도를 모두 입력해주세요.")
     
     with tab2:
         st.markdown("### 도시명으로 검색")
-        city_input = st.text_input("도시명 입력", placeholder="Seoul, Paris, Tokyo...")
+        city_input = st.text_input("도시명 입력", placeholder="Seoul, Paris, Tokyo, New York...")
         
         if city_input and st.button("🔍 도시 검색"):
             cities = search_city_coordinates(city_input, API_KEY)
@@ -230,16 +298,36 @@ if API_KEY:
                         st.session_state.lat = city['lat']
                         st.session_state.lon = city['lon']
                         st.session_state.location_set = True
+                        st.session_state.auto_analyze = True
                         st.success(f"✅ 선택됨: {location_str}")
+                        st.rerun()
             else:
-                st.error("검색 결과가 없습니다.")
+                st.error("❌ 검색 결과가 없습니다. 영어로 입력해보세요.")
+    
+    # URL 파라미터에서 위치 정보 확인 (JavaScript 메시지 처리)
+    query_params = st.query_params
+    if 'lat' in query_params and 'lon' in query_params:
+        try:
+            lat = float(query_params['lat'])
+            lon = float(query_params['lon'])
+            if lat != 0.0 and lon != 0.0:
+                st.session_state.lat = lat
+                st.session_state.lon = lon
+                st.session_state.location_set = True
+                st.session_state.auto_analyze = True
+                # 파라미터 정리
+                st.query_params.clear()
+                st.rerun()
+        except:
+            pass
     
     # 위치가 설정되었을 때 날씨 분석
     if st.session_state.location_set and st.session_state.lat and st.session_state.lon:
-        st.success(f"📍 설정된 위치: 위도 {st.session_state.lat:.6f}, 경도 {st.session_state.lon:.6f}")
+        st.markdown("---")
+        st.success(f"📍 분석 위치: 위도 {st.session_state.lat:.6f}, 경도 {st.session_state.lon:.6f}")
         
-        # 자동으로 날씨 분석 수행
-        with st.spinner("날씨 정보를 분석하는 중..."):
+        # 날씨 분석 수행
+        with st.spinner("🌡️ 날씨 정보를 분석하는 중..."):
             weather_data = get_weather(st.session_state.lat, st.session_state.lon, API_KEY)
             
             if weather_data:
@@ -247,58 +335,97 @@ if API_KEY:
                 humidity = weather_data['humidity']
                 feels_like_owm = weather_data['feels_like']
                 weather_desc = weather_data['weather_desc']
+                city_name = weather_data['city_name']
+                country = weather_data['country']
                 
                 # 체감온도 계산
                 heat_index = calculate_heat_index(temp, humidity)
                 dew_point = calculate_dew_point(temp, humidity)
                 comprehensive_feel = calculate_comprehensive_feel(temp, humidity, dew_point)
                 
-                # 결과 표시
-                st.markdown("---")
-                st.subheader("🌡️ 체감온도 분석 결과")
+                # 쾌적도 평가
+                comfort_text, comfort_color = get_comfort_level(comprehensive_feel)
                 
-                col1, col2 = st.columns(2)
+                # 결과 표시
+                st.subheader(f"🌡️ {city_name}, {country} 날씨 분석")
+                
+                # 메인 정보
+                col1, col2, col3 = st.columns(3)
                 with col1:
-                    st.info(f"**날씨**: {weather_desc.title()}")
-                    st.info(f"**습도**: {humidity}%")
-                    st.info(f"**이슬점**: {dew_point}°C")
+                    st.metric("🌡️ 현재 기온", f"{temp:.1f}°C")
+                with col2:
+                    st.metric("💧 습도", f"{humidity}%")
+                with col3:
+                    st.metric("🌤️ 날씨", weather_desc.title())
+                
+                # 체감온도 비교
+                st.markdown("### 📊 체감온도 분석")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.metric("🌡️ OpenWeatherMap 체감온도", f"{feels_like_owm:.1f}°C", 
+                             f"{feels_like_owm-temp:+.1f}°C")
+                    st.metric("🌡️ Heat Index (습도 적용)", f"{heat_index:.1f}°C", 
+                             f"{heat_index-temp:+.1f}°C")
                 
                 with col2:
-                    st.metric("🌡️ 현재 기온", f"{temp}°C")
-                    st.metric("💧 습도만 적용된 체감기온", f"{heat_index}°C", f"{heat_index-temp:+.1f}°C")
-                    st.metric("🌡️ 습도+이슬점 적용 체감기온", f"{comprehensive_feel}°C", f"{comprehensive_feel-temp:+.1f}°C")
+                    st.metric("💧 이슬점", f"{dew_point:.1f}°C")
+                    st.metric("🌡️ 종합 체감온도", f"{comprehensive_feel:.1f}°C", 
+                             f"{comprehensive_feel-temp:+.1f}°C")
                 
-                # 간단한 쾌적도 평가
-                if comprehensive_feel < 20:
-                    comfort = "쾌적 😊"
-                elif comprehensive_feel < 25:
-                    comfort = "보통 😐"
-                elif comprehensive_feel < 30:
-                    comfort = "더움 😓"
-                else:
-                    comfort = "매우 더움 🥵"
+                # 쾌적도 표시
+                st.markdown(f"""
+                <div style="background: {comfort_color}20; padding: 20px; border-radius: 10px; 
+                            border-left: 5px solid {comfort_color}; margin: 20px 0;">
+                    <h3 style="color: {comfort_color}; margin: 0;">쾌적도 평가: {comfort_text}</h3>
+                </div>
+                """, unsafe_allow_html=True)
                 
-                st.success(f"**쾌적도**: {comfort}")
+                # 상세 정보
+                with st.expander("📈 상세 분석 정보"):
+                    st.markdown(f"""
+                    **계산 방법:**
+                    - **Heat Index**: 온도와 습도를 고려한 미국 기상청 공식
+                    - **이슬점**: 공기가 포화되어 이슬이 맺히는 온도
+                    - **종합 체감온도**: 습도와 이슬점을 모두 고려한 계산
+                    
+                    **현재 조건:**
+                    - 기온: {temp:.1f}°C
+                    - 습도: {humidity}%
+                    - 이슬점: {dew_point:.1f}°C
+                    - 습도 보정: {(humidity-50)*0.03:+.1f}°C
+                    - 이슬점 보정: {max(0, (dew_point-15)*0.15):+.1f}°C
+                    """)
                 
                 # 초기화 버튼
-                if st.button("🔄 다른 위치 분석하기"):
+                if st.button("🔄 다른 위치 분석하기", type="secondary"):
                     st.session_state.location_set = False
                     st.session_state.lat = None
                     st.session_state.lon = None
+                    st.session_state.auto_analyze = False
                     st.rerun()
             else:
-                st.error("❌ 날씨 정보를 가져올 수 없습니다.")
+                st.error("❌ 날씨 정보를 가져올 수 없습니다. 다시 시도해주세요.")
     
     elif not st.session_state.location_set:
-        st.info("👆 위치를 설정하세요!")
+        st.info("👆 위 탭에서 위치를 설정하여 날씨 분석을 시작하세요!")
 
 else:
     st.warning("⚠️ OpenWeatherMap API 키가 필요합니다.")
     st.markdown("""
-    ### 📝 API 키 설정:
+    ### 📝 API 키 설정 방법:
     1. [OpenWeatherMap](https://openweathermap.org/api)에서 무료 계정 생성
-    2. `.streamlit/secrets.toml`에 추가:
-    ```
+    2. API 키 발급 후 `.streamlit/secrets.toml` 파일에 추가:
+    ```toml
     OWM_KEY = "your_api_key_here"
     ```
+    3. 앱 재시작
     """)
+
+# 하단 정보
+st.markdown("---")
+st.markdown("""
+<div style="text-align: center; color: #666; font-size: 12px;">
+    🌡️ 위치 기반 체감온도 분석기 | 데이터 제공: OpenWeatherMap
+</div>
+""", unsafe_allow_html=True)
