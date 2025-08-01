@@ -32,9 +32,9 @@ class CompletionExecutor:
         conn.close()
         return data
 
-@app.get("/")
-def root():
-    return {"message": "FastAPI is live 🎉"}
+# @app.get("/")
+# def root():
+#    return {"message": "FastAPI is live 🎉"}
 
 @app.post("/summarize")
 def summarize(text: str):
