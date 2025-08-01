@@ -1,9 +1,12 @@
-# main.py
 from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 import os, http.client, json, uuid
+# ↓↓↓ 새로 추가 ↓↓↓
+from fastapi.staticfiles import StaticFiles
+# ────────────────────────────────────────────
 
 load_dotenv()
+app = FastAPI(title="Clova Summarizer API")
 
 # 콘솔에서 본 Host/Path
 HOST = "clovastudio.apigw.ntruss.com"
@@ -58,3 +61,4 @@ def summarize(text: str):
         return {"summary": result["result"]["text"]}
 
     raise HTTPException(status_code=500, detail=result)
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
