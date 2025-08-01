@@ -1,41 +1,47 @@
-<!DOCTYPE html>
+<!doctype html>
 <meta charset="utf-8" />
-<title>✂️ AI 요약기</title>
+<title>AI 요약기 (JSON 버전)</title>
 <style>
-body{font-family:system-ui;margin:3rem auto;max-width:750px}
-textarea{width:100%;height:240px}
-button{padding:.6rem 1.4rem;font-size:1rem}
-#result{white-space:pre-wrap;border:1px solid #ddd;padding:1rem;margin-top:1rem}
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; }
+  textarea { width: 100%; height: 200px; }
+  button { padding: .6rem 1.2rem; margin-top: .5rem; font-size: 1rem; }
+  pre { background: #f6f8fa; padding: 1rem; }
 </style>
 
 <h1>✂️ AI 요약기</h1>
 
-<textarea id="input" placeholder="여기에 긴 글을 붙여 넣으세요…"></textarea><br>
-<button id="btn">요약하기</button>
+<textarea id="input" placeholder="요약할 내용을 입력하세요"></textarea>
+<br />
+<button id="go">요약하기</button>
 
 <h2>요약 결과</h2>
-<div id="result"> </div>
+<pre id="out">(아직 없음)</pre>
 
 <script>
-const $ = (q)=>document.querySelector(q);
-$('#btn').onclick = async () => {
-  const text = $('#input').value.trim();
-  if(!text) return alert('텍스트를 입력하세요!');
-  $('#btn').disabled = true; $('#btn').textContent = '요약 중…';
-  $('#result').textContent = '⌛️ 조금만 기다려 주세요…';
+const $ = (id) => document.getElementById(id);
+
+$('go').onclick = async () => {
+  const text = $('input').value.trim();
+  if (!text) return alert('먼저 텍스트를 입력해 주세요.');
+
+  $('out').textContent = '⏳ 요약 중...';
 
   try {
-    const res = await fetch('/summarize', {
+    const r = await fetch('http://localhost:8000/summarize', {
       method: 'POST',
-      body: new URLSearchParams({text})
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || res.statusText);
-    $('#result').textContent = data.summary;
-  } catch (err) {
-    $('#result').textContent = '❌ 에러: ' + err.message;
-  } finally {
-    $('#btn').disabled = false; $('#btn').textContent = '요약하기';
+
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err.detail ?? r.statusText);
+    }
+
+    const data = await r.json();
+    $('out').textContent = data.summary;
+  } catch (e) {
+    $('out').textContent = '❌ 에러: ' + e.message;
   }
 };
 </script>
