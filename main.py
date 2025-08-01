@@ -1,17 +1,17 @@
-from fastapi import FastAPI, HTTPException
-from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Form
 from fastapi.staticfiles import StaticFiles
+from dotenv import load_dotenv
 import os, http.client, json, uuid
 
 load_dotenv()
 
-# 콘솔에서 본 Host/Path
+# 콘솔 REST API 문서에서 확인한 값으로 교체
 HOST = "clovastudio.apigw.ntruss.com"
-PATH = "/testapp/v1/summarization"   # ← 워크스페이스 ID로 변경
+PATH = "/testapp/v1/summarization"         # ← testapp 부분을 워크스페이스 ID로
 
-app = FastAPI(title="Clova Summarizer API")   # ★ 딱 한 번만 선언
+app = FastAPI(title="Clova Summarizer API")
 
-# ─── CompletionExecutor ─────────────────────────────────────
+# ────────────────────── Clova 호출 래퍼 ──────────────────────
 class CompletionExecutor:
     def __init__(self, api_key: str, request_id: str | None = None):
         self.api_key = api_key
@@ -31,14 +31,12 @@ class CompletionExecutor:
         return data
 # ────────────────────────────────────────────────────────────
 
-# 헬스체크는 /health 로 이동 (선택)
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
-# 요약 엔드포인트
 @app.post("/summarize")
-def summarize(text: str):
+def summarize(text: str = Form(...)):                 # ← 프런트에서 보내는 form-data 받기
     text = text.strip()
     if not text:
         raise HTTPException(status_code=400, detail="빈 텍스트")
@@ -47,7 +45,7 @@ def summarize(text: str):
     if not api_key:
         raise HTTPException(status_code=500, detail="API 키 없음")
 
-    executor = CompletionExecutor(api_key=api_key)
+    executor = CompletionExecutor(api_key)
     payload = {
         "texts": [text],
         "segMinSize": 300,
@@ -58,10 +56,10 @@ def summarize(text: str):
     }
     result = executor.execute(payload)
 
-    if result.get("status", {}).get("code") == "20000":
+    if result.get("status", {}).get("code") == "20000" and "text" in result["result"]:
         return {"summary": result["result"]["text"]}
 
     raise HTTPException(status_code=500, detail=result)
 
-# ★★★ 파일 최하단에 Static mount (app 정의 후 ‘마지막’)
+# HTML 정적 페이지 서빙
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
