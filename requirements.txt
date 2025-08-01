@@ -1,3 +1,6 @@
-fastapi
-uvicorn[standard]
-python-dotenv        # (선택) 로컬 .env 사용 시
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+transformers==4.40.2
+torch==2.2.2          # CPU 전용
+python-multipart==0.0.9
+pydantic==2.7.1
