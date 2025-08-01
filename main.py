@@ -39,7 +39,29 @@ def health():
 # 요약 엔드포인트
 @app.post("/summarize")
 def summarize(text: str):
-    ...
+    text = text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="빈 텍스트")
+
+    api_key = os.getenv("CLOVA_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="API 키 없음")
+
+    executor = CompletionExecutor(api_key=api_key)
+    payload = {
+        "texts": [text],
+        "segMinSize": 300,
+        "segMaxSize": 1000,
+        "includeAiFilters": False,
+        "autoSentenceSplitter": True,
+        "segCount": -1
+    }
+    result = executor.execute(payload)
+
+    if result.get("status", {}).get("code") == "20000":
+        return {"summary": result["result"]["text"]}
+
+    raise HTTPException(status_code=500, detail=result)
 
 # ★★★ 파일 최하단에 Static mount (app 정의 후 ‘마지막’)
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
